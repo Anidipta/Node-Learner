@@ -1,0 +1,8 @@
+streamlit 
+streamlit_lottie
+pymongo 
+plotly 
+networkx 
+pyvis 
+requests 
+python-dotenv
