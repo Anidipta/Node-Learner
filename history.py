@@ -42,11 +42,30 @@ def show_history():
             st.rerun()
         return
     
+    # Get comprehensive learning stats
+    learning_stats = db.get_learning_stats(st.session_state.user_id)
+    
     # Create tabs for different views
-    tab1, tab2, tab3 = st.tabs(["📊 Overview", "📑 Sessions", "🔍 Search"])
+    tab1, tab2, tab3, tab4 = st.tabs(["📊 Overview", "📈 Advanced Analytics", "📑 Sessions", "🔍 Search"])
     
     with tab1:
         st.markdown("### 📊 Learning Analytics")
+        
+        # Display summary stats
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric("Total Sessions", learning_stats["total_sessions"])
+        
+        with col2:
+            st.metric("Topics Explored", learning_stats["topics_explored"])
+            
+        with col3:
+            total_hours = learning_stats["total_time"] / 3600
+            st.metric("Total Hours", f"{total_hours:.1f}")
+            
+        with col4:
+            st.metric("Learning Streak", f"{learning_stats['learning_streak']} days")
         
         # Process data for analytics
         topics = {}
@@ -164,123 +183,188 @@ def show_history():
                 df_nodes, 
                 x="date", 
                 y="nodes_explored",
-                title="Concepts Explored per Day",
-                labels={"nodes_explored": "Nodes Explored", "date": "Date"},
+                title="Nodes Explored per Day",
+                labels={"nodes_explored": "Nodes", "date": "Date"},
                 markers=True
             )
             
-            fig.update_traces(line_color="#3949AB")
+            fig.update_traces(line_color="#00BFA5")
             st.plotly_chart(fig, use_container_width=True)
     
     with tab2:
-        st.markdown("### 📑 Learning Sessions")
+        st.markdown("### 📈 Advanced Analytics")
         
-        # Sort by most recent first
-        sessions = sorted(history, key=lambda x: x["timestamp"], reverse=True)
+        # Topic knowledge depth analysis
+        topic_depth_data = []
         
-        # Display sessions
-        for i, session in enumerate(sessions):
-            with st.expander(f"{session['topic']} - {session['timestamp'].strftime('%Y-%m-%d %H:%M')}"):
+        for topic, data in topics.items():
+            avg_nodes_per_session = data["nodes_explored"] / data["sessions"] if data["sessions"] > 0 else 0
+            avg_time_per_node = data["total_time"] / data["nodes_explored"] if data["nodes_explored"] > 0 else 0
+            
+            topic_depth_data.append({
+                "topic": topic,
+                "avg_nodes_per_session": avg_nodes_per_session,
+                "avg_time_per_node": avg_time_per_node / 60,  # Convert to minutes
+                "total_sessions": data["sessions"]
+            })
+        
+        topic_depth_df = pd.DataFrame(topic_depth_data)
+        
+        if not topic_depth_df.empty:
+            # Topic depth scatter plot
+            fig = px.scatter(
+                topic_depth_df,
+                x="avg_nodes_per_session",
+                y="avg_time_per_node",
+                size="total_sessions",
+                color="total_sessions",
+                hover_name="topic",
+                size_max=40,
+                title="Topic Exploration Depth Analysis",
+                labels={
+                    "avg_nodes_per_session": "Avg. Nodes per Session",
+                    "avg_time_per_node": "Avg. Minutes per Node",
+                    "total_sessions": "Total Sessions"
+                }
+            )
+            
+            fig.update_layout(height=500)
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Learning efficiency over time
+            if len(history) > 3:  # Only show if we have enough data
+                efficiency_data = []
+                
+                # Sort history by timestamp
+                sorted_history = sorted(history, key=lambda x: x["timestamp"])
+                
+                for i, session in enumerate(sorted_history):
+                    if session["time_spent"] > 0 and len(session["nodes_explored"]) > 0:
+                        efficiency = len(session["nodes_explored"]) / (session["time_spent"] / 60)  # Nodes per minute
+                        efficiency_data.append({
+                            "session_number": i + 1,
+                            "date": session["timestamp"].date(),
+                            "efficiency": efficiency,
+                            "topic": session["topic"]
+                        })
+                
+                if efficiency_data:
+                    eff_df = pd.DataFrame(efficiency_data)
+                    
+                    fig = px.line(
+                        eff_df,
+                        x="session_number",
+                        y="efficiency",
+                        title="Learning Efficiency Over Time (Nodes per Minute)",
+                        labels={
+                            "session_number": "Session Number",
+                            "efficiency": "Efficiency (Nodes/Minute)",
+                            "topic": "Topic"
+                        },
+                        hover_data=["date", "topic"],
+                        markers=True
+                    )
+                    
+                    fig.update_traces(line_color="#FF4081")
+                    st.plotly_chart(fig, use_container_width=True)
+    
+    with tab3:
+        st.markdown("### 📑 Session History")
+        
+        # Create a dataframe of sessions
+        sessions_data = []
+        
+        for session in history:
+            sessions_data.append({
+                "date": session["timestamp"].strftime("%Y-%m-%d %H:%M"),
+                "topic": session["topic"],
+                "time_spent": format_time_spent(session["time_spent"]),
+                "nodes_explored": len(session["nodes_explored"]),
+                "raw_timestamp": session["timestamp"],  # For sorting
+                "session_id": str(session["_id"]),  # For identification
+                "tree_id": session["tree_id"]  # For linking to the graph
+            })
+        
+        # Sort by timestamp (most recent first)
+        sessions_df = pd.DataFrame(sessions_data).sort_values("raw_timestamp", ascending=False)
+        
+        if not sessions_df.empty:
+            # Remove raw timestamp from display
+            display_df = sessions_df.drop(columns=["raw_timestamp", "session_id", "tree_id"])
+            
+            # Display table with highlighting
+            st.dataframe(
+                display_df,
+                hide_index=True,
+                column_config={
+                    "date": "Date & Time",
+                    "topic": "Topic",
+                    "time_spent": "Time Spent",
+                    "nodes_explored": "Nodes Explored"
+                },
+                use_container_width=True
+            )
+            
+            # Session selection for details
+            selected_session = st.selectbox(
+                "Select a session to view details:",
+                options=sessions_df["session_id"].tolist(),
+                format_func=lambda x: f"{sessions_df[sessions_df['session_id'] == x]['date'].values[0]} - {sessions_df[sessions_df['session_id'] == x]['topic'].values[0]}"
+            )
+            
+            if selected_session:
+                # Get session details
+                session_row = sessions_df[sessions_df["session_id"] == selected_session].iloc[0]
+                
+                st.markdown(f"### Session Details: {session_row['topic']}")
+                
                 col1, col2, col3 = st.columns(3)
                 
                 with col1:
-                    st.markdown(f"**Topic:** {session['topic']}")
+                    st.metric("Date", session_row["date"])
                 
                 with col2:
-                    st.markdown(f"**Time Spent:** {format_time_spent(session['time_spent'])}")
+                    st.metric("Time Spent", session_row["time_spent"])
                 
                 with col3:
-                    st.markdown(f"**Nodes Explored:** {len(session['nodes_explored'])}")
+                    st.metric("Nodes Explored", session_row["nodes_explored"])
                 
-                st.markdown("**Concepts Explored:**")
-                st.write(", ".join(session["nodes_explored"]))
-                
-                # Button to revisit this topic
-                if st.button(f"Revisit Topic", key=f"revisit_{i}"):
-                    st.session_state.topic = session["topic"]
-                    st.session_state.current_page = 'visualizer'
+                # Option to revisit this topic in visualizer
+                if st.button(f"📚 Continue exploring '{session_row['topic']}'"):
+                    # Store tree_id in session state to load the graph in visualizer
+                    st.session_state.load_tree_id = session_row["tree_id"]
+                    st.session_state.load_topic = session_row["topic"]
+                    st.session_state.current_page = "visualizer"
                     st.rerun()
     
-    with tab3:
-        st.markdown("### 🔍 Search Learning History")
+    with tab4:
+        st.markdown("### 🔍 Search Your Learning History")
         
-        # Search box
-        search_query = st.text_input("Search topics or concepts")
+        # Search input
+        search_query = st.text_input("Search topics or concepts you've explored:")
         
         if search_query:
-            # Search in topics
-            topic_results = db.search_topics(st.session_state.user_id, search_query)
+            # Search in database
+            search_results = db.search_learning_history(st.session_state.user_id, search_query)
             
-            # Search in session nodes explored
-            session_results = []
-            for session in history:
-                for node in session["nodes_explored"]:
-                    if search_query.lower() in node.lower():
-                        session_results.append(session)
-                        break
-            
-            # Display results
-            if topic_results or session_results:
-                st.markdown(f"Found {len(topic_results)} topics and {len(session_results)} sessions matching '{search_query}'")
+            if search_results:
+                st.success(f"Found {len(search_results)} results for '{search_query}'")
                 
-                # Display topic results
-                if topic_results:
-                    st.markdown("#### Topic Matches")
-                    for topic in topic_results:
-                        with st.expander(topic["topic"]):
-                            st.markdown(f"**Created:** {topic.get('created_at', 'Unknown').strftime('%Y-%m-%d')}")
-                            st.markdown(f"**Last Updated:** {topic.get('updated_at', 'Unknown').strftime('%Y-%m-%d')}")
-                            
-                            # Button to explore this topic
-                            if st.button(f"Explore Topic", key=f"explore_{topic['topic']}"):
-                                st.session_state.topic = topic["topic"]
-                                st.session_state.current_page = 'visualizer'
-                                st.rerun()
-                
-                # Display session results
-                if session_results:
-                    st.markdown("#### Session Matches")
-                    for i, session in enumerate(session_results):
-                        with st.expander(f"{session['topic']} - {session['timestamp'].strftime('%Y-%m-%d %H:%M')}"):
-                            st.markdown(f"**Time Spent:** {format_time_spent(session['time_spent'])}")
-                            st.markdown(f"**Concepts Explored:** {', '.join(session['nodes_explored'])}")
-                            
-                            # Highlight matching nodes
-                            st.markdown("**Matching Concepts:**")
-                            matching_nodes = [node for node in session["nodes_explored"] if search_query.lower() in node.lower()]
-                            st.write(", ".join(matching_nodes))
-                            
-                            # Button to revisit this topic
-                            if st.button(f"Revisit Topic", key=f"revisit_search_{i}"):
-                                st.session_state.topic = session["topic"]
-                                st.session_state.current_page = 'visualizer'
-                                st.rerun()
+                # Display search results
+                for result in search_results:
+                    with st.expander(f"**{result['topic']}** - {result['timestamp'].strftime('%Y-%m-%d')}"):
+                        st.write(f"**Time spent:** {format_time_spent(result['time_spent'])}")
+                        st.write(f"**Nodes explored:** {len(result['nodes_explored'])}")
+                        
+                        if "nodes_explored" in result and result["nodes_explored"]:
+                            st.write("**Concepts explored:**")
+                            st.write(", ".join(result["nodes_explored"]))
+                        
+                        # Button to revisit this topic
+                        if st.button(f"Continue exploring '{result['topic']}'", key=f"search_{result['_id']}"):
+                            st.session_state.load_tree_id = result["tree_id"]
+                            st.session_state.load_topic = result["topic"]
+                            st.session_state.current_page = "visualizer"
+                            st.rerun()
             else:
                 st.info(f"No results found for '{search_query}'")
-    
-    # Export data button
-    st.markdown("---")
-    if st.button("📥 Export Learning History"):
-        # Create DataFrame for export
-        export_data = []
-        for session in history:
-            export_data.append({
-                "Topic": session["topic"],
-                "Date": session["timestamp"].strftime("%Y-%m-%d %H:%M"),
-                "Time Spent (minutes)": round(session["time_spent"] / 60, 2),
-                "Nodes Explored": len(session["nodes_explored"]),
-                "Concepts": ", ".join(session["nodes_explored"])
-            })
-        
-        df_export = pd.DataFrame(export_data)
-        
-        # Convert to CSV
-        csv = df_export.to_csv(index=False)
-        
-        # Create download button
-        st.download_button(
-            label="Download CSV",
-            data=csv,
-            file_name=f"nodelearn_history_{datetime.datetime.now().strftime('%Y%m%d')}.csv",
-            mime="text/csv"
-        )

@@ -5,6 +5,18 @@ import networkx as nx
 import base64
 import datetime
 import streamlit as st
+import base64
+
+def init_session_state():
+    """Initialize session state variables"""
+    if "current_page" not in st.session_state:
+        st.session_state.current_page = "landing"
+    if "authenticated" not in st.session_state:
+        st.session_state.authenticated = False
+    if "user_id" not in st.session_state:
+        st.session_state.user_id = None
+    if "user_name" not in st.session_state:
+        st.session_state.user_name = None
 
 def get_base64_image(image_path):
     with open(image_path, "rb") as img_file:

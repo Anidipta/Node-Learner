@@ -291,3 +291,125 @@ class AIExplorer:
         except Exception as e:
             st.error(f"Error getting explanation: {e}")
             return f"Failed to get explanation for {topic}: {str(e)}"
+            
+    def explore_subtopic(self, main_topic, subtopic):
+        """
+        Explore a specific subtopic of a main topic
+        
+        Args:
+            main_topic (str): The main topic
+            subtopic (str): The subtopic to explore
+            
+        Returns:
+            dict: Subtopic information and related concepts
+        """
+        try:
+            if self.provider == "google":
+                url = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent"
+                headers = {
+                    "Content-Type": "application/json",
+                    "x-goog-api-key": self.google_api_key
+                }
+                
+                prompt = f"""
+                Create a detailed exploration of the subtopic "{subtopic}" related to "{main_topic}".
+                Return a JSON object with the following structure:
+                {{
+                    "subtopic": "{subtopic}",
+                    "main_topic": "{main_topic}",
+                    "summary": "A 3-4 sentence detailed explanation of how this subtopic relates to the main topic",
+                    "key_points": ["Point 1", "Point 2", "Point 3"],
+                    "related_concepts": [
+                        {{
+                            "name": "Related concept 1",
+                            "relation": "How it relates to this subtopic",
+                            "summary": "Brief explanation"
+                        }},
+                        ...up to 4 related concepts...
+                    ]
+                }}
+                Only return the JSON data with no additional text or explanation.
+                """
+                
+                data = {
+                    "contents": [{
+                        "parts": [{
+                            "text": prompt
+                        }]
+                    }]
+                }
+                
+                response = requests.post(url, headers=headers, json=data)
+                response.raise_for_status()
+                
+                result = response.json()
+                text_result = result['candidates'][0]['content']['parts'][0]['text']
+                
+                # Extract JSON from response
+                json_str = text_result.strip()
+                if json_str.startswith('```json'):
+                    json_str = json_str[7:]
+                if json_str.endswith('```'):
+                    json_str = json_str[:-3]
+                    
+                return json.loads(json_str)
+            
+            elif self.provider == "groq":
+                url = "https://api.groq.com/openai/v1/chat/completions"
+                headers = {
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {self.groq_api_key}"
+                }
+                
+                prompt = f"""
+                Create a detailed exploration of the subtopic "{subtopic}" related to "{main_topic}".
+                Return a JSON object with the following structure:
+                {{
+                    "subtopic": "{subtopic}",
+                    "main_topic": "{main_topic}",
+                    "summary": "A 3-4 sentence detailed explanation of how this subtopic relates to the main topic",
+                    "key_points": ["Point 1", "Point 2", "Point 3"],
+                    "related_concepts": [
+                        {{
+                            "name": "Related concept 1",
+                            "relation": "How it relates to this subtopic",
+                            "summary": "Brief explanation"
+                        }},
+                        ...up to 4 related concepts...
+                    ]
+                }}
+                Only return the JSON data with no additional text or explanation.
+                """
+                
+                data = {
+                    "model": "llama3-70b-8192",
+                    "messages": [
+                        {"role": "system", "content": "You are a helpful assistant that provides well-structured JSON responses for knowledge exploration."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    "temperature": 0.3
+                }
+                
+                response = requests.post(url, headers=headers, json=data)
+                response.raise_for_status()
+                
+                result = response.json()
+                text_result = result['choices'][0]['message']['content']
+                
+                # Extract JSON from response
+                json_str = text_result.strip()
+                if json_str.startswith('```json'):
+                    json_str = json_str[7:]
+                if json_str.endswith('```'):
+                    json_str = json_str[:-3]
+                    
+                return json.loads(json_str)
+                
+        except Exception as e:
+            st.error(f"Error exploring subtopic: {e}")
+            return {
+                "subtopic": subtopic,
+                "main_topic": main_topic,
+                "summary": f"Failed to explore subtopic: {str(e)}",
+                "related_concepts": []
+            }

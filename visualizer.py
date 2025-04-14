@@ -3,6 +3,7 @@ import networkx as nx
 import plotly.graph_objects as go
 import json
 import time
+import uuid
 from pyvis.network import Network
 import streamlit.components.v1 as components
 from db import get_db_connection
@@ -14,28 +15,77 @@ def create_knowledge_graph(topic_data):
     
     # Add main topic node
     main_topic = topic_data["topic"]
-    G.add_node(main_topic, size=25, color="#6200EA", title=topic_data["summary"])
+    G.add_node(main_topic, size=25, color="#6200EA", title=topic_data["summary"], 
+               type="main", level=0, node_id=str(uuid.uuid4()))
     
     # Add related concepts
     for concept in topic_data.get("related_concepts", []):
         concept_name = concept["name"]
-        G.add_node(concept_name, size=15, color="#7C4DFF", title=concept["summary"])
-        G.add_edge(main_topic, concept_name, title=concept["relation"])
+        node_id = str(uuid.uuid4())
+        G.add_node(concept_name, size=15, color="#7C4DFF", title=concept["summary"], 
+                   type="concept", level=1, parent=main_topic, node_id=node_id)
+        G.add_edge(main_topic, concept_name, title=concept["relation"], weight=1)
     
     # Add subtopics if they exist
     for subtopic in topic_data.get("subtopics", []):
         subtopic_name = subtopic["name"]
-        G.add_node(subtopic_name, size=20, color="#3949AB", title=subtopic["summary"])
-        G.add_edge(main_topic, subtopic_name, title="subtopic")
+        node_id = str(uuid.uuid4())
+        G.add_node(subtopic_name, size=20, color="#3949AB", title=subtopic["summary"], 
+                   type="subtopic", level=1, parent=main_topic, node_id=node_id)
+        G.add_edge(main_topic, subtopic_name, title="subtopic", weight=1)
     
     return G
 
-def convert_to_pyvis(nx_graph):
-    """Convert NetworkX graph to PyVis for HTML visualization"""
-    pyvis_net = Network(height="600px", width="100%", bgcolor="#FFFFFF", font_color="black")
+def add_subnodes_to_graph(G, node_name, subnodes_data):
+    """Add subnodes to the graph for a selected node"""
+    # Get the node's level
+    parent_level = G.nodes[node_name].get('level', 0)
+    parent_id = G.nodes[node_name].get('node_id')
     
-    # Configure physics
-    pyvis_net.barnes_hut(gravity=-5000, central_gravity=0.3, spring_length=150)
+    # Add subnodes
+    for subnode in subnodes_data.get('related_concepts', []):
+        subnode_name = subnode["name"]
+        node_id = str(uuid.uuid4())
+        
+        # Check if node already exists
+        if subnode_name not in G:
+            # Create a new node with a different color based on level
+            colors = ["#E91E63", "#00BCD4", "#FF9800", "#4CAF50", "#9C27B0"]
+            level_color = colors[min((parent_level + 1) % len(colors), len(colors) - 1)]
+            
+            G.add_node(
+                subnode_name, 
+                size=12, 
+                color=level_color, 
+                title=subnode["summary"], 
+                type="sub-concept", 
+                level=parent_level + 1,
+                parent=node_name,
+                node_id=node_id
+            )
+            
+            G.add_edge(
+                node_name, 
+                subnode_name, 
+                title=subnode.get("relation", "related to"), 
+                weight=1
+            )
+    
+    return G
+
+def convert_to_pyvis(nx_graph, click_callback=True):
+    """Convert NetworkX graph to PyVis for HTML visualization with click events"""
+    pyvis_net = Network(height="600px", width="100%", bgcolor="#FFFFFF", font_color="black", select_menu=True, cdn_resources="remote")
+    
+    # Configure physics for better visualization
+    pyvis_net.barnes_hut(
+        gravity=-8000,        # More negative value for more repulsion
+        central_gravity=0.8,  # Higher value to keep nodes more centered
+        spring_length=200,    # More space between nodes
+        spring_strength=0.05, # Weaker spring for more flexibility
+        damping=0.9,          # Less oscillation
+        overlap=0            # Prevent node overlap
+    )
     
     # Add nodes and edges from NetworkX
     for node in nx_graph.nodes():
@@ -45,16 +95,63 @@ def convert_to_pyvis(nx_graph):
             label=node, 
             title=node_attrs.get("title", ""),
             size=node_attrs.get("size", 15),
-            color=node_attrs.get("color", "#7C4DFF")
+            color=node_attrs.get("color", "#7C4DFF"),
+            # Store additional attributes for access in JS events
+            level=node_attrs.get("level", 0),
+            node_type=node_attrs.get("type", "concept"),
+            node_id=node_attrs.get("node_id", "")
         )
     
     for edge in nx_graph.edges():
         edge_attrs = nx_graph.edges[edge]
+        weight = edge_attrs.get("weight", 1)
         pyvis_net.add_edge(
             edge[0], 
             edge[1],
-            title=edge_attrs.get("title", "")
+            title=edge_attrs.get("title", ""),
+            value=weight,  # Edge thickness
+            arrowStrikethrough=False
         )
+    
+    # Create options dictionary
+    options = {
+        "nodes": {
+            "font": {
+                "size": 12,
+                "face": "Roboto"
+            },
+            "borderWidth": 2,
+            "shadow": True
+        },
+        "edges": {
+            "color": {
+                "inherit": True
+            },
+            "smooth": {
+                "type": "continuous",
+                "forceDirection": "none"
+            },
+            "shadow": True,
+            "width": 1.5
+        },
+        "interaction": {
+            "hover": True,
+            "navigationButtons": True,
+            "keyboard": True,
+            "tooltipDelay": 300
+        },
+        "physics": {
+            "stabilization": {
+                "iterations": 100
+            }
+        },
+        "manipulation": {
+            "enabled": False
+        }
+    }
+    
+    # Set options
+    pyvis_net.options = options
     
     return pyvis_net
 
@@ -123,7 +220,7 @@ def create_plotly_graph(nx_graph):
 
 def show_visualizer():
     """Main function to display the knowledge tree visualizer"""
-    st.markdown("<h1 class='main-header'>🌳 Knowledge Tree Visualizer</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 class='main-header'>🌳 Infinite Knowledge Tree</h1>", unsafe_allow_html=True)
     
     # Initialize session state for visualizer
     if 'topic' not in st.session_state:
@@ -142,10 +239,24 @@ def show_visualizer():
         st.session_state.nodes_explored = set()
     if 'current_node' not in st.session_state:
         st.session_state.current_node = None
+    if 'selected_node_id' not in st.session_state:
+        st.session_state.selected_node_id = None
+    if 'show_node_details' not in st.session_state:
+        st.session_state.show_node_details = False
+    if 'load_tree_id' not in st.session_state:
+        st.session_state.load_tree_id = None
+    if 'load_topic' not in st.session_state:
+        st.session_state.load_topic = None
+    if 'subnodes_expanded' not in st.session_state:
+        st.session_state.subnodes_expanded = set()
+    if 'auto_expand' not in st.session_state:
+        st.session_state.auto_expand = False
+    if 'expansion_queue' not in st.session_state:
+        st.session_state.expansion_queue = []
     
     # Sidebar controls
     with st.sidebar:
-        st.markdown("### 🔍 Topic Explorer")
+        st.markdown("### 🔍 Exploration Controls")
         
         # AI Provider selection
         ai_provider = st.selectbox(
@@ -158,7 +269,7 @@ def show_visualizer():
         exploration_depth = st.slider(
             "Exploration Depth",
             min_value=1,
-            max_value=3,
+            max_value=5,  # Increased max depth for more expansion
             value=st.session_state.exploration_depth,
             help="Higher depth = more detailed information but slower response"
         )
@@ -167,93 +278,188 @@ def show_visualizer():
         if exploration_depth != st.session_state.exploration_depth:
             st.session_state.exploration_depth = exploration_depth
         
-        # Visualization type
-        st.session_state.visualization_type = "interactive"
+        # Auto-expand toggle
+        st.session_state.auto_expand = st.toggle(
+            "Auto-expand nodes",
+            value=st.session_state.auto_expand,
+            help="Automatically expand nodes to create an infinite mindmap"
+        )
+        
+        # Visualization options
+        st.divider()
+        st.markdown("### 🎨 Visualization Options")
+        
+        # Layout options
+        layout_option = st.selectbox(
+            "Graph Layout",
+            ["Force-directed", "Hierarchical", "Circular"],
+            index=0,
+            help="Different layouts for visualizing the knowledge tree"
+        )
+        
+        # Node color scheme
+        color_scheme = st.selectbox(
+            "Color Scheme",
+            ["Rainbow", "Temperature", "Pastel", "Deep"],
+            index=0,
+            help="Color palette for nodes"
+        )
         
         # History of explored topics
         if st.session_state.authenticated:
+            st.divider()
             st.markdown("### 📚 Recent Topics")
             db = get_db_connection()
             recent_trees = db.get_knowledge_tree(st.session_state.user_id)[:5]
             
             for tree in recent_trees:
-                if st.button(f"📌 {tree['topic']}", key=f"history_{tree['topic']}"):
-                    st.session_state.topic = tree['topic']
-                    st.session_state.topic_data = {
-                        "topic": tree['topic'],
-                        "summary": "Loaded from history",
-                        "related_concepts": [],  # Will be populated from DB
-                    }
-                    
-                    # Reconstruct topic data from saved nodes and edges
-                    for node_id in tree['nodes']:
-                        node = tree['nodes'][node_id]
-                        if node_id != tree['topic']:  # Skip main topic node
-                            concept = {
-                                "name": node_id,
-                                "summary": node.get('title', ''),
-                                "relation": ""  # Will be filled from edges
-                            }
-                            st.session_state.topic_data["related_concepts"].append(concept)
-                    
-                    # Add relations from edges
-                    for edge in tree['edges']:
-                        for concept in st.session_state.topic_data["related_concepts"]:
-                            if concept["name"] in edge:
-                                concept["relation"] = tree['edges'][edge].get('title', '')
-                    
-                    # Set current node to main topic
-                    st.session_state.current_node = tree['topic']
-                    
-                    # Update nodes explored
-                    st.session_state.nodes_explored = set([tree['topic']])
-                    
-                    # Reset exploration time
-                    st.session_state.exploration_start_time = time.time()
-                    
+                if st.button(f"📌 {tree.get('topic', 'Untitled')}", key=f"history_{tree.get('_id', '')}"):
+                    st.session_state.load_tree_id = str(tree.get('_id', ''))
+                    st.session_state.load_topic = tree.get('topic', '')
                     st.rerun()
     
-    # Main content area
-    col1, col2 = st.columns([3, 1])
+    # Check if we should load a tree from history
+    if st.session_state.load_tree_id and st.session_state.load_topic:
+        db = get_db_connection()
+        tree = db.get_knowledge_tree_by_id(st.session_state.load_tree_id)
+        
+        if tree:
+            # Set topic
+            st.session_state.topic = st.session_state.load_topic
+            
+            # Reconstruct knowledge graph from stored data
+            G = nx.Graph()
+            
+            # Add nodes
+            for node_id, node_data in tree.get('nodes', {}).items():
+                G.add_node(
+                    node_id,
+                    **node_data  # Add all stored attributes
+                )
+            
+            # Add edges
+            for edge_key, edge_data in tree.get('edges', {}).items():
+                # Edge key is in format "node1_node2"
+                nodes = edge_key.split('_')
+                if len(nodes) >= 2:  # Make sure we have valid edge data
+                    G.add_edge(nodes[0], nodes[1], **edge_data)
+            
+            # Store the reconstructed graph
+            st.session_state.graph = G
+            
+            # Set current node to main topic
+            st.session_state.current_node = st.session_state.topic
+            
+            # Update nodes explored
+            st.session_state.nodes_explored = set([st.session_state.topic])
+            
+            # Reset exploration time
+            st.session_state.exploration_start_time = time.time()
+            
+            # Clear load flags
+            st.session_state.load_tree_id = None
+            st.session_state.load_topic = None
     
-    with col1:
-        # Topic input
-        topic_input = st.text_input(
-            "Enter a topic to explore",
-            value=st.session_state.topic,
-            help="Type any topic you want to learn about"
-        )
+    # Main content area
+    # Topic input and explore button
+    topic_input = st.text_input(
+        "Enter a topic to explore",
+        value=st.session_state.topic,
+        help="Type any topic you want to learn about"
+    )
+    
+    if topic_input != st.session_state.topic:
+        st.session_state.topic = topic_input
+    
+    # Explore button
+    if st.button("🔍 Explore Topic", disabled=not st.session_state.topic, key="explore_topic_btn"):
+        with st.spinner(f"Exploring {st.session_state.topic}..."):
+            # Initialize AI explorer with selected provider
+            explorer = AIExplorer(
+                provider="google" if ai_provider == "Google Generative AI" else "groq"
+            )
+            
+            # Get topic data
+            st.session_state.topic_data = explorer.explore_topic(
+                st.session_state.topic,
+                depth=st.session_state.exploration_depth
+            )
+            
+            # Create graph
+            st.session_state.graph = create_knowledge_graph(st.session_state.topic_data)
+            
+            # Set current node to main topic
+            st.session_state.current_node = st.session_state.topic
+            
+            # Update nodes explored
+            st.session_state.nodes_explored.add(st.session_state.topic)
+            
+            # Reset exploration time
+            st.session_state.exploration_start_time = time.time()
+            
+            # Initialize expansion queue for auto-expand
+            st.session_state.expansion_queue = [st.session_state.topic]
+            
+            # Save to database if authenticated
+            if st.session_state.authenticated:
+                db = get_db_connection()
+                
+                # Convert NetworkX graph to node/edge dict for MongoDB
+                nodes_dict = {}
+                edges_dict = {}
+                
+                for node in st.session_state.graph.nodes():
+                    nodes_dict[node] = dict(st.session_state.graph.nodes[node])
+                
+                for edge in st.session_state.graph.edges():
+                    edge_key = f"{edge[0]}_{edge[1]}"
+                    edges_dict[edge_key] = dict(st.session_state.graph.edges[edge])
+                
+                # Save to database
+                tree_id = db.save_knowledge_tree(
+                    st.session_state.user_id,
+                    st.session_state.topic,
+                    nodes_dict,
+                    edges_dict
+                )
+    
+    # Auto-expand logic
+    if st.session_state.auto_expand and st.session_state.graph and st.session_state.expansion_queue:
+        # Get next node to expand
+        node_to_expand = st.session_state.expansion_queue.pop(0)
         
-        if topic_input != st.session_state.topic:
-            st.session_state.topic = topic_input
-        
-        # Explore button
-        if st.button("🔍 Explore Topic", disabled=not st.session_state.topic):
-            with st.spinner(f"Exploring {st.session_state.topic}..."):
-                # Initialize AI explorer with selected provider
+        # Check if node exists and hasn't been expanded yet
+        if (node_to_expand in st.session_state.graph.nodes() and 
+            node_to_expand not in st.session_state.subnodes_expanded):
+            
+            with st.spinner(f"Auto-expanding {node_to_expand}..."):
+                # Initialize AI explorer
                 explorer = AIExplorer(
                     provider="google" if ai_provider == "Google Generative AI" else "groq"
                 )
                 
-                # Get topic data
-                st.session_state.topic_data = explorer.explore_topic(
-                    st.session_state.topic,
-                    depth=st.session_state.exploration_depth
+                # Get subnodes for this concept
+                subnodes_data = explorer.get_related_concepts(node_to_expand)
+                
+                # Update graph with new subnodes
+                st.session_state.graph = add_subnodes_to_graph(
+                    st.session_state.graph, 
+                    node_to_expand, 
+                    subnodes_data
                 )
                 
-                # Create graph
-                st.session_state.graph = create_knowledge_graph(st.session_state.topic_data)
+                # Mark node as expanded
+                st.session_state.subnodes_expanded.add(node_to_expand)
                 
-                # Set current node to main topic
-                st.session_state.current_node = st.session_state.topic
+                # Update nodes explored count
+                st.session_state.nodes_explored.add(node_to_expand)
                 
-                # Update nodes explored
-                st.session_state.nodes_explored.add(st.session_state.topic)
+                # Add new nodes to expansion queue
+                for subnode in subnodes_data:
+                    if subnode["name"] not in st.session_state.expansion_queue:
+                        st.session_state.expansion_queue.append(subnode["name"])
                 
-                # Reset exploration time
-                st.session_state.exploration_start_time = time.time()
-                
-                # Save to database if authenticated
+                # Save updated graph to database
                 if st.session_state.authenticated:
                     db = get_db_connection()
                     
@@ -268,104 +474,201 @@ def show_visualizer():
                         edge_key = f"{edge[0]}_{edge[1]}"
                         edges_dict[edge_key] = dict(st.session_state.graph.edges[edge])
                     
-                    # Save to database
+                    # Get existing tree ID or create new
+                    tree = db.get_knowledge_tree(st.session_state.user_id, st.session_state.topic)
+                    tree_id = str(tree[0]["_id"]) if tree and len(tree) > 0 else None
+                    
+                    # Update tree in database
                     tree_id = db.save_knowledge_tree(
                         st.session_state.user_id,
                         st.session_state.topic,
                         nodes_dict,
-                        edges_dict
+                        edges_dict,
+                        tree_id=tree_id,
+                        update=True
                     )
-        
-        # Display visualization if graph exists
-        if st.session_state.graph:
-            st.markdown("### 🌳 Knowledge Tree")
             
-            if st.session_state.visualization_type == "interactive":
-                # Create PyVis visualization
-                pyvis_net = convert_to_pyvis(st.session_state.graph)
-                
-                # Save and display HTML
-                pyvis_net.save_graph("temp_graph.html")
-                with open("temp_graph.html", "r", encoding="utf-8") as f:
-                    html_data = f.read()
-                
-                # Display graph with custom height
-                components.html(html_data, height=600)
+            # Rerun to continue auto-expansion
+            st.rerun()
     
-    with col2:
-        # Information panel
-        st.markdown("### 📖 Topic Information")
+    # Display visualization if graph exists
+    if st.session_state.graph:
+        # Interactive visualization with PyVis
+        pyvis_net = convert_to_pyvis(st.session_state.graph)
         
-        if st.session_state.topic_data:
-            # Display current node information
-            if st.session_state.current_node:
-                # Get node information
-                if st.session_state.current_node == st.session_state.topic_data["topic"]:
-                    # Main topic
-                    st.markdown(f"#### {st.session_state.current_node}")
-                    st.markdown(st.session_state.topic_data["summary"])
-                    
-                    # Display key points if available
-                    if "key_points" in st.session_state.topic_data:
-                        st.markdown("#### Key Points")
-                        for point in st.session_state.topic_data["key_points"]:
-                            st.markdown(f"• {point}")
-                else:
-                    # Related concept
-                    for concept in st.session_state.topic_data.get("related_concepts", []):
-                        if concept["name"] == st.session_state.current_node:
-                            st.markdown(f"#### {concept['name']}")
-                            st.markdown(f"**Relation:** {concept['relation']}")
-                            st.markdown(concept["summary"])
-                            break
-                    
-                    # Check subtopics if not found in related concepts
-                    if "subtopics" in st.session_state.topic_data:
-                        for subtopic in st.session_state.topic_data["subtopics"]:
-                            if subtopic["name"] == st.session_state.current_node:
-                                st.markdown(f"#### {subtopic['name']}")
-                                st.markdown(subtopic["summary"])
-                                break
+        # Save HTML
+        pyvis_net.save_graph("assets/static/temp_graph.html")
+        
+        # Read the saved HTML
+        with open("assets/static/temp_graph.html", "r", encoding="utf-8") as f:
+            html_data = f.read()
+        
+        # Add custom JavaScript for node click events
+        custom_js = """
+        <script>
+        // Wait for network to be fully loaded
+        setTimeout(function() {
+            try {
+                // Get the network instance
+                const network = document.getElementsByClassName('vis-network')[0].network;
                 
-                # Get detailed explanation button
-                if st.button("🔍 Get Detailed Explanation"):
-                    with st.spinner(f"Getting details about {st.session_state.current_node}..."):
+                // Add click event listener
+                network.on("click", function(params) {
+                    if (params.nodes.length > 0) {
+                        var nodeId = params.nodes[0];
+                        var node = network.body.data.nodes.get(nodeId);
+                        
+                        // Send node info to Streamlit via sessionStorage
+                        sessionStorage.setItem('selectedNode', JSON.stringify({
+                            id: nodeId,
+                            label: node.label,
+                            node_id: node.node_id
+                        }));
+                        
+                        // Trigger a click on a hidden button to refresh Streamlit
+                        document.getElementById('node_selected_trigger').click();
+                    }
+                });
+            } catch (e) {
+                console.error("Error setting up node click handler:", e);
+            }
+        }, 1000);
+        </script>
+        """
+        
+        # Insert custom JS before the closing body tag
+        html_data = html_data.replace('</body>', custom_js + '</body>')
+        
+        # Add hidden button for node selection triggering
+        hidden_button = """
+        <button id="node_selected_trigger" style="display:none;">Node Selected</button>
+        <script>
+        // Get the button element
+        const button = document.getElementById('node_selected_trigger');
+        
+        // Add click event listener to reload the page and pass selected node
+        button.addEventListener('click', function() {
+            // Get selected node from session storage
+            const selectedNode = sessionStorage.getItem('selectedNode');
+            if (selectedNode) {
+                // Encode node data
+                const encodedNode = encodeURIComponent(selectedNode);
+                
+                // Build URL with query parameter
+                const url = new URL(window.location.href);
+                url.searchParams.set('selected_node', encodedNode);
+                
+                // Navigate to the new URL
+                window.location.href = url.toString();
+            }
+        });
+        </script>
+        """
+        
+        # Insert hidden button before the closing body tag
+        html_data = html_data.replace('</body>', hidden_button + '</body>')
+        
+        # Display graph with custom height
+        components.html(html_data, height=600)
+        
+        # Process node selection from URL parameters
+        query_params = st.query_params  
+        if "selected_node" in query_params:
+            try:
+                node_data = json.loads(query_params["selected_node"][0])
+                st.session_state.selected_node_id = node_data["id"]
+                st.session_state.current_node = node_data["id"]
+                st.session_state.show_node_details = True
+                
+                # Update URL to remove query parameter (to avoid reloading issues)
+                st.experimental_set_query_params()
+            except Exception as e:
+                st.error(f"Error processing selected node: {e}")
+    
+    # Node details section
+    if st.session_state.graph and st.session_state.current_node:
+        current_node = st.session_state.current_node
+        
+        if current_node in st.session_state.graph.nodes():
+            node_attrs = st.session_state.graph.nodes[current_node]
+            
+            # Display node information
+            with st.expander(f"📖 {current_node}", expanded=True):
+                st.markdown(node_attrs.get('title', 'No description available'))
+                
+                # Node metadata
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.markdown(f"**Type:** {node_attrs.get('type', 'concept').title()}")
+                with col2:
+                    level = node_attrs.get('level', 0)
+                    st.markdown(f"**Depth Level:** {level}")
+                
+                # Expansion controls
+                if st.button("🌱 Expand this concept", key=f"expand_{current_node}"):
+                    with st.spinner(f"Expanding {current_node}..."):
+                        # Initialize AI explorer
                         explorer = AIExplorer(
                             provider="google" if ai_provider == "Google Generative AI" else "groq"
                         )
-                        explanation = explorer.get_detailed_explanation(st.session_state.current_node)
-                        st.markdown(explanation)
                         
-                        # Update nodes explored
-                        st.session_state.nodes_explored.add(st.session_state.current_node)
-            
-            # Display related concepts for navigation
-            st.markdown("### 🔄 Related Concepts")
-            
-            if "related_concepts" in st.session_state.topic_data:
-                for concept in st.session_state.topic_data["related_concepts"]:
-                    if st.button(f"📌 {concept['name']}", key=f"concept_{concept['name']}"):
-                        st.session_state.current_node = concept["name"]
+                        # Get subnodes for this concept using explore_subtopic
+                        subnodes_data = explorer.explore_subtopic(
+                            main_topic=st.session_state.topic,
+                            subtopic=current_node
+                        )
+                        
+                        # Update graph with new subnodes
+                        st.session_state.graph = add_subnodes_to_graph(
+                            st.session_state.graph, 
+                            current_node, 
+                            subnodes_data
+                        )
+                        
+                        # Mark node as expanded
+                        st.session_state.subnodes_expanded.add(current_node)
+                        
+                        # Update nodes explored count
+                        st.session_state.nodes_explored.add(current_node)
+                        
+                        # Save updated graph to database
+                        if st.session_state.authenticated:
+                            db = get_db_connection()
+                            
+                            # Convert NetworkX graph to node/edge dict for MongoDB
+                            nodes_dict = {}
+                            edges_dict = {}
+                            
+                            for node in st.session_state.graph.nodes():
+                                nodes_dict[node] = dict(st.session_state.graph.nodes[node])
+                            
+                            for edge in st.session_state.graph.edges():
+                                edge_key = f"{edge[0]}_{edge[1]}"
+                                edges_dict[edge_key] = dict(st.session_state.graph.edges[edge])
+                            
+                            # Update tree in database
+                            tree_id = db.save_knowledge_tree(
+                                st.session_state.user_id,
+                                st.session_state.topic,
+                                nodes_dict,
+                                edges_dict,
+                                update=True
+                            )
+                        
                         st.rerun()
-            
-            # Display subtopics if available
-            if "subtopics" in st.session_state.topic_data:
-                st.markdown("### 📑 Subtopics")
                 
-                for subtopic in st.session_state.topic_data["subtopics"]:
-                    if st.button(f"📚 {subtopic['name']}", key=f"subtopic_{subtopic['name']}"):
-                        st.session_state.current_node = subtopic["name"]
-                        st.rerun()
-            
-            # Return to main topic button
-            if st.session_state.current_node and st.session_state.current_node != st.session_state.topic_data["topic"]:
-                if st.button(f"🔙 Back to {st.session_state.topic_data['topic']}"):
-                    st.session_state.current_node = st.session_state.topic_data["topic"]
-                    st.rerun()
+                # Detailed explanation
+                if st.button("📚 Get detailed explanation", key=f"explain_{current_node}"):
+                    with st.spinner(f"Generating detailed explanation..."):
+                        explorer = AIExplorer(
+                            provider="google" if ai_provider == "Google Generative AI" else "groq"
+                        )
+                        explanation = explorer.get_detailed_explanation(current_node)
+                        st.markdown("### Detailed Explanation")
+                        st.markdown(explanation)
     
     # If user is authenticated, log session when they leave
-    if st.session_state.authenticated and st.session_state.topic_data:
-        # Check if we need to log the session
+    if st.session_state.authenticated and st.session_state.graph:
         current_time = time.time()
         time_spent = current_time - st.session_state.exploration_start_time
         
@@ -373,19 +676,36 @@ def show_visualizer():
         if time_spent > 30 and len(st.session_state.nodes_explored) > 0:
             db = get_db_connection()
             
-            # Get tree ID
+            # Get tree ID safely
             tree = db.get_knowledge_tree(st.session_state.user_id, st.session_state.topic)
-            tree_id = str(tree["_id"]) if tree else None
+            tree_id = str(tree[0]["_id"]) if tree and len(tree) > 0 else None
             
-            if tree_id:
-                # Log session
-                db.log_learning_session(
+            if not tree_id:
+                nodes_dict = {}
+                edges_dict = {}
+                
+                for node in st.session_state.graph.nodes():
+                    nodes_dict[node] = dict(st.session_state.graph.nodes[node])
+                
+                for edge in st.session_state.graph.edges():
+                    edge_key = f"{edge[0]}_{edge[1]}"
+                    edges_dict[edge_key] = dict(st.session_state.graph.edges[edge])
+                
+                tree_id = db.save_knowledge_tree(
                     st.session_state.user_id,
                     st.session_state.topic,
-                    tree_id,
-                    list(st.session_state.nodes_explored),
-                    int(time_spent)
+                    nodes_dict,
+                    edges_dict
                 )
-                
-                # Reset timer
-                st.session_state.exploration_start_time = current_time
+            
+            # Log session
+            db.log_learning_session(
+                st.session_state.user_id,
+                st.session_state.topic,
+                tree_id,
+                list(st.session_state.nodes_explored),
+                int(time_spent)
+            )
+            
+            # Reset timer
+            st.session_state.exploration_start_time = current_time

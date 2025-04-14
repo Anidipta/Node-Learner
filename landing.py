@@ -250,7 +250,7 @@ def show_landing(authenticated=False):
     with st.container():
         col1, col2, col3 = st.columns([1, 10, 1])
         with col2:
-            logo_base64 = get_base64_image("assets/logo_design.png")
+            logo_base64 = get_base64_image("assets/images/logo_design.png")
             st.markdown(
                 f"<h1 class='main-header'><img src='{logo_base64}' width='90' style='vertical-align:middle; margin-right:10px;'> NodeLearn</h1>", 
                 unsafe_allow_html=True
@@ -265,7 +265,7 @@ def show_landing(authenticated=False):
                 col_a, col_b, col_c = st.columns([1, 1, 1])
                 with col_a:
                     if st.button("✨ Connect with Google", key="demo_button", use_container_width=True):
-                        st.session_state.current_page = 'signup'
+                        st.session_state.current_page = 'google_auth'
                         st.rerun()
                 with col_b:
                     if st.button("🔑 Login", key="login_button", use_container_width=True):

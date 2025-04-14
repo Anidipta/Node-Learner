@@ -1,0 +1,374 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script>function neighbourhoodHighlight(params) {
+  // console.log("in nieghbourhoodhighlight");
+  allNodes = nodes.get({ returnType: "Object" });
+  // originalNodes = JSON.parse(JSON.stringify(allNodes));
+  // if something is selected:
+  if (params.nodes.length > 0) {
+    highlightActive = true;
+    var i, j;
+    var selectedNode = params.nodes[0];
+    var degrees = 2;
+
+    // mark all nodes as hard to read.
+    for (let nodeId in allNodes) {
+      // nodeColors[nodeId] = allNodes[nodeId].color;
+      allNodes[nodeId].color = "rgba(200,200,200,0.5)";
+      if (allNodes[nodeId].hiddenLabel === undefined) {
+        allNodes[nodeId].hiddenLabel = allNodes[nodeId].label;
+        allNodes[nodeId].label = undefined;
+      }
+    }
+    var connectedNodes = network.getConnectedNodes(selectedNode);
+    var allConnectedNodes = [];
+
+    // get the second degree nodes
+    for (i = 1; i < degrees; i++) {
+      for (j = 0; j < connectedNodes.length; j++) {
+        allConnectedNodes = allConnectedNodes.concat(
+          network.getConnectedNodes(connectedNodes[j])
+        );
+      }
+    }
+
+    // all second degree nodes get a different color and their label back
+    for (i = 0; i < allConnectedNodes.length; i++) {
+      // allNodes[allConnectedNodes[i]].color = "pink";
+      allNodes[allConnectedNodes[i]].color = "rgba(150,150,150,0.75)";
+      if (allNodes[allConnectedNodes[i]].hiddenLabel !== undefined) {
+        allNodes[allConnectedNodes[i]].label =
+          allNodes[allConnectedNodes[i]].hiddenLabel;
+        allNodes[allConnectedNodes[i]].hiddenLabel = undefined;
+      }
+    }
+
+    // all first degree nodes get their own color and their label back
+    for (i = 0; i < connectedNodes.length; i++) {
+      // allNodes[connectedNodes[i]].color = undefined;
+      allNodes[connectedNodes[i]].color = nodeColors[connectedNodes[i]];
+      if (allNodes[connectedNodes[i]].hiddenLabel !== undefined) {
+        allNodes[connectedNodes[i]].label =
+          allNodes[connectedNodes[i]].hiddenLabel;
+        allNodes[connectedNodes[i]].hiddenLabel = undefined;
+      }
+    }
+
+    // the main node gets its own color and its label back.
+    // allNodes[selectedNode].color = undefined;
+    allNodes[selectedNode].color = nodeColors[selectedNode];
+    if (allNodes[selectedNode].hiddenLabel !== undefined) {
+      allNodes[selectedNode].label = allNodes[selectedNode].hiddenLabel;
+      allNodes[selectedNode].hiddenLabel = undefined;
+    }
+  } else if (highlightActive === true) {
+    // console.log("highlightActive was true");
+    // reset all nodes
+    for (let nodeId in allNodes) {
+      // allNodes[nodeId].color = "purple";
+      allNodes[nodeId].color = nodeColors[nodeId];
+      // delete allNodes[nodeId].color;
+      if (allNodes[nodeId].hiddenLabel !== undefined) {
+        allNodes[nodeId].label = allNodes[nodeId].hiddenLabel;
+        allNodes[nodeId].hiddenLabel = undefined;
+      }
+    }
+    highlightActive = false;
+  }
+
+  // transform the object into an array
+  var updateArray = [];
+  if (params.nodes.length > 0) {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        // console.log(allNodes[nodeId]);
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  } else {
+    // console.log("Nothing was selected");
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        // console.log(allNodes[nodeId]);
+        // allNodes[nodeId].color = {};
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  }
+}
+
+function filterHighlight(params) {
+  allNodes = nodes.get({ returnType: "Object" });
+  // if something is selected:
+  if (params.nodes.length > 0) {
+    filterActive = true;
+    let selectedNodes = params.nodes;
+
+    // hiding all nodes and saving the label
+    for (let nodeId in allNodes) {
+      allNodes[nodeId].hidden = true;
+      if (allNodes[nodeId].savedLabel === undefined) {
+        allNodes[nodeId].savedLabel = allNodes[nodeId].label;
+        allNodes[nodeId].label = undefined;
+      }
+    }
+
+    for (let i=0; i < selectedNodes.length; i++) {
+      allNodes[selectedNodes[i]].hidden = false;
+      if (allNodes[selectedNodes[i]].savedLabel !== undefined) {
+        allNodes[selectedNodes[i]].label = allNodes[selectedNodes[i]].savedLabel;
+        allNodes[selectedNodes[i]].savedLabel = undefined;
+      }
+    }
+
+  } else if (filterActive === true) {
+    // reset all nodes
+    for (let nodeId in allNodes) {
+      allNodes[nodeId].hidden = false;
+      if (allNodes[nodeId].savedLabel !== undefined) {
+        allNodes[nodeId].label = allNodes[nodeId].savedLabel;
+        allNodes[nodeId].savedLabel = undefined;
+      }
+    }
+    filterActive = false;
+  }
+
+  // transform the object into an array
+  var updateArray = [];
+  if (params.nodes.length > 0) {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  } else {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  }
+}
+
+function selectNode(nodes) {
+  network.selectNodes(nodes);
+  neighbourhoodHighlight({ nodes: nodes });
+  return nodes;
+}
+
+function selectNodes(nodes) {
+  network.selectNodes(nodes);
+  filterHighlight({nodes: nodes});
+  return nodes;
+}
+
+function highlightFilter(filter) {
+  let selectedNodes = []
+  let selectedProp = filter['property']
+  if (filter['item'] === 'node') {
+    let allNodes = nodes.get({ returnType: "Object" });
+    for (let nodeId in allNodes) {
+      if (allNodes[nodeId][selectedProp] && filter['value'].includes((allNodes[nodeId][selectedProp]).toString())) {
+        selectedNodes.push(nodeId)
+      }
+    }
+  }
+  else if (filter['item'] === 'edge'){
+    let allEdges = edges.get({returnType: 'object'});
+    // check if the selected property exists for selected edge and select the nodes connected to the edge
+    for (let edge in allEdges) {
+      if (allEdges[edge][selectedProp] && filter['value'].includes((allEdges[edge][selectedProp]).toString())) {
+        selectedNodes.push(allEdges[edge]['from'])
+        selectedNodes.push(allEdges[edge]['to'])
+      }
+    }
+  }
+  selectNodes(selectedNodes)
+}</script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+            
+            
+            
+            
+            
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.0.0-rc.4/css/tom-select.min.css" integrity="sha512-43fHB3GLgZfz8QXl1RPQ8O66oIgv3po9cJ5erMt1c4QISq9dYb195T3vr5ImnJPXuVroKcGBPXBFKETW8jrPNQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.0.0-rc.4/js/tom-select.complete.js" integrity="sha512-jeF9CfnvzDiw9G9xiksVjxR2lib44Gnovvkv+3CgCG6NXCD4gqlA5nDAVW5WjpA+i+/zKsUWV5xNEbW1X/HH0Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 100%;
+                 height: 600px;
+                 background-color: #FFFFFF;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+                <div id="select-menu" class="card-header">
+                    <div class="row no-gutters">
+                        <div class="col-10 pb-2">
+                            <select
+                            class="form-select"
+                            aria-label="Default select example"
+                            onchange="selectNode([value]);"
+                            id="select-node"
+                            placeholder="Select node..."
+                            >
+                                <option selected>Select a Node by ID</option>
+                                
+                                    <option value="Art">Art</option>
+                                
+                                    <option value="Aesthetics">Aesthetics</option>
+                                
+                                    <option value="Creativity">Creativity</option>
+                                
+                                    <option value="Culture">Culture</option>
+                                
+                                    <option value="History">History</option>
+                                
+                                    <option value="Technique">Technique</option>
+                                
+                                    <option value="Art History">Art History</option>
+                                
+                                    <option value="Art Criticism">Art Criticism</option>
+                                
+                                    <option value="Art Theory">Art Theory</option>
+                                
+                                    <option value="Artistic Movements">Artistic Movements</option>
+                                
+                            </select>
+                        </div>
+                        <div class="col-2 pb-2">
+                            <button type="button" class="btn btn-primary btn-block" onclick="neighbourhoodHighlight({nodes: []});">Reset Selection</button>
+                        </div>
+                    </div>
+                </div>
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+                  new TomSelect("#select-node",{
+                      create: false,
+                      sortField: {
+                          field: "text",
+                          direction: "asc"
+                      }
+                  });
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": "#6200EA", "font": {"color": "black"}, "id": "Art", "label": "Art", "level": 0, "node_id": "7ab9032a-83f6-4dcb-86d4-8fe50de7317b", "node_type": "main", "shape": "dot", "size": 25, "title": "Art encompasses diverse forms of creative expression, reflecting human experience and imagination.  It can serve as communication, cultural preservation, and aesthetic appreciation, existing across various mediums and historical periods.  The definition and value of art remain subjects of ongoing debate and interpretation."}, {"color": "#7C4DFF", "font": {"color": "black"}, "id": "Aesthetics", "label": "Aesthetics", "level": 1, "node_id": "352fe120-d1a4-433a-a0b9-5dc31feda137", "node_type": "concept", "shape": "dot", "size": 15, "title": "Aesthetics explores the nature of beauty, taste, and artistic experience."}, {"color": "#7C4DFF", "font": {"color": "black"}, "id": "Creativity", "label": "Creativity", "level": 1, "node_id": "f64a6b6b-97ce-4f5e-8e3f-7903fae7beaa", "node_type": "concept", "shape": "dot", "size": 15, "title": "Creativity is the ability to produce novel and valuable ideas and works."}, {"color": "#7C4DFF", "font": {"color": "black"}, "id": "Culture", "label": "Culture", "level": 1, "node_id": "938e4f18-9f77-4c0a-a9a3-5f18daae35db", "node_type": "concept", "shape": "dot", "size": 15, "title": "Art acts as a mirror and a shaper of cultural identity and transmission."}, {"color": "#7C4DFF", "font": {"color": "black"}, "id": "History", "label": "History", "level": 1, "node_id": "3ba592f4-098a-4670-8089-43b2bf901d20", "node_type": "concept", "shape": "dot", "size": 15, "title": "Art history chronicles the development of artistic styles, techniques, and movements throughout different eras."}, {"color": "#7C4DFF", "font": {"color": "black"}, "id": "Technique", "label": "Technique", "level": 1, "node_id": "cedff29c-6930-4e4c-8786-6e5180b1c0b2", "node_type": "concept", "shape": "dot", "size": 15, "title": "Technique refers to the artistic processes and proficiency in using tools and materials."}, {"color": "#00BCD4", "font": {"color": "black"}, "id": "Art History", "label": "Art History", "level": 1, "node_id": "eba2765b-8106-42d8-9f10-15339ce584fb", "node_type": "sub-concept", "shape": "dot", "size": 12, "title": "The study of art across different time periods and cultures, tracing its development and influences."}, {"color": "#00BCD4", "font": {"color": "black"}, "id": "Art Criticism", "label": "Art Criticism", "level": 1, "node_id": "a09c9a15-d76e-4591-a0ba-27babb6f77f7", "node_type": "sub-concept", "shape": "dot", "size": 12, "title": "The practice of analyzing and interpreting artworks, often involving aesthetic judgments and historical contextualization."}, {"color": "#00BCD4", "font": {"color": "black"}, "id": "Art Theory", "label": "Art Theory", "level": 1, "node_id": "b849131b-03cc-461a-90fb-f6987c2778ce", "node_type": "sub-concept", "shape": "dot", "size": 12, "title": "The body of knowledge and speculation about the nature of art, its functions, and its significance."}, {"color": "#00BCD4", "font": {"color": "black"}, "id": "Artistic Movements", "label": "Artistic Movements", "level": 1, "node_id": "71bbbd1f-3496-4426-b43d-56563d318d46", "node_type": "sub-concept", "shape": "dot", "size": 12, "title": "Examples include Impressionism, Surrealism, and Pop Art, each with distinct characteristics and historical contexts."}]);
+                  edges = new vis.DataSet([{"arrowStrikethrough": false, "from": "Art", "title": "Provides a philosophical framework for understanding and evaluating art\u0027s beauty and emotional impact.", "to": "Aesthetics", "value": 1}, {"arrowStrikethrough": false, "from": "Art", "title": "The fundamental process by which art is generated; the capacity for innovative thinking and expression.", "to": "Creativity", "value": 1}, {"arrowStrikethrough": false, "from": "Art", "title": "Art reflects and shapes the values, beliefs, and practices of a specific culture or society.", "to": "Culture", "value": 1}, {"arrowStrikethrough": false, "from": "Art", "title": "Art\u0027s evolution through time, reflecting societal shifts and artistic movements.", "to": "History", "value": 1}, {"arrowStrikethrough": false, "from": "Art", "title": "The specific skills, methods, and materials employed in creating art.", "to": "Technique", "value": 1}, {"arrowStrikethrough": false, "from": "Art", "title": "Art history provides a chronological and contextual understanding of artistic movements, styles, and their cultural significance, essential for comprehending the evolution of art.", "to": "Art History", "value": 1}, {"arrowStrikethrough": false, "from": "Art", "title": "Art criticism provides methodologies and frameworks for analyzing, interpreting, and evaluating artworks, contributing significantly to art\u0027s understanding and appreciation.", "to": "Art Criticism", "value": 1}, {"arrowStrikethrough": false, "from": "Art", "title": "Art theory provides conceptual frameworks for understanding the nature of art, its creation, and its reception, forming the foundation for scholarly discourse on art.", "to": "Art Theory", "value": 1}, {"arrowStrikethrough": false, "from": "Art", "title": "Illustrates the diverse styles and approaches to art creation across history.", "to": "Artistic Movements", "value": 1}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {"nodes": {"font": {"size": 12, "face": "Roboto"}, "borderWidth": 2, "shadow": true}, "edges": {"color": {"inherit": true}, "smooth": {"type": "continuous", "forceDirection": "none"}, "shadow": true, "width": 1.5}, "interaction": {"hover": true, "navigationButtons": true, "keyboard": true, "tooltipDelay": 300}, "physics": {"stabilization": {"iterations": 100}}, "manipulation": {"enabled": false}};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+                    network.on("selectNode", neighbourhoodHighlight);
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>

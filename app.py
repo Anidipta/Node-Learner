@@ -1,8 +1,10 @@
 import streamlit as st
 from landing import show_landing
-from auth import login_page, signup_page, is_authenticated
+from auth import login_page, signup_page, verify_otp_page, is_authenticated
+from google_auth import connect_google
 from visualizer import show_visualizer
 from history import show_history
+from dashboard import show_dashboard
 
 # Configure the page with initial sidebar hidden
 st.set_page_config(
@@ -19,6 +21,10 @@ if 'current_page' not in st.session_state:
     st.session_state.current_page = 'landing'
 if 'show_sidebar' not in st.session_state:
     st.session_state.show_sidebar = False  # Initially hide sidebar for landing page
+if 'email_for_verification' not in st.session_state:
+    st.session_state.email_for_verification = None
+if 'google_token' not in st.session_state:
+    st.session_state.initiate_google_auth = False
 
 # Global CSS with simpler styling
 st.markdown("""
@@ -95,6 +101,27 @@ st.markdown("""
         background-color: rgba(156, 39, 176, 0.3);
         border-left: 2px solid #d158e9;
     }
+    
+    /* OTP input styling */
+    .otp-input input {
+        font-size: 24px !important;
+        letter-spacing: 6px !important;
+        text-align: center !important;
+    }
+    
+    /* OTP page styling */
+    .otp-container {
+        background-color: rgba(30, 30, 40, 0.7);
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    
+    /* OTP header */
+    .otp-header {
+        color: #d158e9;
+        margin-bottom: 15px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -104,7 +131,7 @@ def sidebar_nav():
     if st.session_state.authenticated or st.session_state.show_sidebar:
         with st.sidebar:
             # Logo
-            st.image("assets/logo.png", width=150)
+            st.image("assets/images/logo.png", width=150)
             
             # User info if authenticated
             if st.session_state.authenticated:
@@ -113,13 +140,13 @@ def sidebar_nav():
             # Navigation options
             st.markdown("---")
             
-            # Home button
-            if st.button("🏠 Home", key="nav_home", use_container_width=True):
-                st.session_state.current_page = 'landing' if not st.session_state.authenticated else 'home'
-                st.rerun()
-            
             # Conditional navigation based on authentication
             if st.session_state.authenticated:
+                # Dashboard button
+                if st.button("📊 Dashboard", key="nav_dashboard", use_container_width=True):
+                    st.session_state.current_page = 'dashboard'
+                    st.rerun()
+                
                 # Knowledge Tree button
                 if st.button("🌳 Knowledge Tree", key="nav_tree", use_container_width=True):
                     st.session_state.current_page = 'visualizer'
@@ -133,11 +160,21 @@ def sidebar_nav():
                 # Logout option
                 st.markdown("---")
                 if st.button("🚪 Logout", key="nav_logout", use_container_width=True):
+                    # Clear all session state on logout
+                    for key in list(st.session_state.keys()):
+                        if key != 'current_page':
+                            del st.session_state[key]
                     st.session_state.authenticated = False
                     st.session_state.current_page = 'landing'
                     st.session_state.show_sidebar = False  # Hide sidebar on logout
                     st.rerun()
             else:
+                
+                # Home button
+                if st.button("🏠 Home", key="nav_home", use_container_width=True):
+                    st.session_state.current_page = 'landing' 
+                    st.rerun()
+                    
                 # Login button for unauthenticated users
                 if st.button("🔑 Login", key="nav_login", use_container_width=True):
                     st.session_state.current_page = 'login'
@@ -147,11 +184,14 @@ def sidebar_nav():
                 if st.button("📝 Sign Up", key="nav_signup", use_container_width=True):
                     st.session_state.current_page = 'signup'
                     st.rerun()
+                
+                # Google Login button
+                if st.button("🔑 Login with Google", key="nav_google", use_container_width=True):
+                    st.session_state.current_page = 'google_auth'
+                    st.rerun()
 
 # Main app routing with simplified navigation
 def main():
-    # Show simple header for sidebar toggle
-       
     # Show sidebar based on state
     sidebar_nav()
     
@@ -164,11 +204,19 @@ def main():
     elif st.session_state.current_page == 'signup':
         st.session_state.show_sidebar = True  # Show sidebar on signup page
         signup_page()
+    elif st.session_state.current_page == 'verify_otp':
+        st.session_state.show_sidebar = True  # Show sidebar on OTP verification page
+        verify_otp_page()
+    elif st.session_state.current_page == 'google_auth':
+        st.session_state.show_sidebar = True  # Show sidebar on Google auth page
+        connect_google()
     # Protected routes (require authentication)
     elif is_authenticated():
         st.session_state.show_sidebar = True  # Always show sidebar for authenticated users
         if st.session_state.current_page == 'home':
             show_landing(authenticated=True)
+        elif st.session_state.current_page == 'dashboard':
+            show_dashboard()
         elif st.session_state.current_page == 'visualizer':
             show_visualizer()
         elif st.session_state.current_page == 'history':
