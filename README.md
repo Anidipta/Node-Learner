@@ -28,16 +28,48 @@
 
 ## 🧰 Tech Stack
 
-| Layer         | Technologies                                |
-|---------------|----------------------------------------------|
-| Frontend/UI   | Streamlit, HTML/CSS, Custom Components       |
-| Language      | Python 3.8+                                  |
-| Visualization | Pyvis, NetworkX, Plotly                      |
-| AI Integrations| Google GenAI, GROQ                          |
-| Database      | MongoDB (local/cloud)                        |
-| Auth          | Custom + Google OAuth2                       |
-| PDF Parsing   | PyWk                                         |
-| Deployment    | Streamlit Cloud / Docker                     |
+<p align="center">
+  <table style="width:100%">
+    <tr>
+      <th>Layer</th>
+      <th>Technologies</th>
+    </tr>
+    <tr>
+      <td>Frontend/UI</td>
+      <td>Streamlit, HTML/CSS, Custom Components</td>
+    </tr>
+    <tr>
+      <td>Language</td>
+      <td>Python 3.8+</td>
+    </tr>
+    <tr>
+      <td>Visualization</td>
+      <td>Pyvis, NetworkX, Plotly</td>
+    </tr>
+    <tr>
+      <td>AI Integrations</td>
+      <td>Google GenAI, GROQ</td>
+    </tr>
+    <tr>
+      <td>Database</td>
+      <td>MongoDB (local/cloud)</td>
+    </tr>
+    <tr>
+      <td>Auth</td>
+      <td>Custom + Google OAuth2</td>
+    </tr>
+    <tr>
+      <td>PDF Parsing</td>
+      <td>PyWk</td>
+    </tr>
+    <tr>
+      <td>Deployment</td>
+      <td>Streamlit Cloud / Docker</td>
+    </tr>
+  </table>
+</p>
+
+
 
 ---
 
