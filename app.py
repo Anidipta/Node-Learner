@@ -1,4 +1,5 @@
 import streamlit as st
+import time
 from landing import show_landing
 from auth import login_page, signup_page, verify_otp_page, is_authenticated
 from google_auth import connect_google
@@ -25,6 +26,28 @@ if 'email_for_verification' not in st.session_state:
     st.session_state.email_for_verification = None
 if 'google_token' not in st.session_state:
     st.session_state.initiate_google_auth = False
+if 'current_page' not in st.session_state:
+    st.session_state.current_page = 'home'
+if 'start_time' not in st.session_state:
+    st.session_state.start_time = time.time()
+if 'explored_nodes' not in st.session_state:
+    st.session_state.explored_nodes = set()
+if 'graph_data' not in st.session_state:
+    st.session_state.graph_data = None
+if 'main_topic' not in st.session_state:
+    st.session_state.main_topic = None
+if 'node_details' not in st.session_state:
+    st.session_state.node_details = None
+if 'node_data' not in st.session_state:
+    st.session_state.node_data = None
+if 'node_id' not in st.session_state:
+    st.session_state.node_id = None
+if 'graph_image' not in st.session_state:
+    st.session_state.graph_image = None
+if 'graph_image_data' not in st.session_state:
+    st.session_state.graph_image_data = None
+if 'graph_image_path' not in st.session_state:
+    st.session_state.graph_image_path = None
 
 # Global CSS with simpler styling
 st.markdown("""

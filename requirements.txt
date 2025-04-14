@@ -1,9 +1,11 @@
 streamlit 
 streamlit_lottie
 streamlit-oauth
+streamlit_javascript
 pymongo 
 plotly 
 networkx 
 pyvis 
 requests 
 python-dotenv
+fpdf
