@@ -1,4 +1,6 @@
-![](https://github.com/Anidipta/Node-Learner/blob/main/assets/images/logo.png)
+<p align="center">
+  <img src="https://github.com/Anidipta/Node-Learner/blob/main/assets/images/logo.png" width="35%" />
+</p>
 
 **NodeLearn** is an interactive knowledge exploration platform designed to transform learning into a dynamic and visual experience. Using **AI-driven topic suggestions**, interactive trees, session tracking, and beautiful Streamlit UI, NodeLearn is your visual knowledge companion.
 
@@ -16,23 +18,11 @@
 
 - 📥 Downloadable Learning PDF: Generate and download a PDF summary of your session (topics explored, AI suggestions, time spent).
 
-### 📊 Visual Analytics  
-Engaging dashboards showing:
-- Most explored topics  
-- Weekly/monthly learning trends  
-- Time spent per topic/tree branch  
+- 🔍 Searchable Learning Archive:  Use full-text or tag-based search to instantly find past topics.
 
-### 🔍 Searchable Learning Archive  
-Use full-text or tag-based search to instantly find past topics.
+- 🔐 Secure Authentication:  Custom auth plus **Google OAuth2 login** for secure, personalized access.
 
-### 🔐 Secure Authentication  
-Custom auth plus **Google OAuth2 login** for secure, personalized access.
-
-### 🧾 Document Parsing (PyWk)  
-Extracts topics and concepts from uploaded PDFs, articles, and notes.
-
-### 🌐 MongoDB Integration  
-Stores all session data, history, and topic trees persistently.
+- 🧾 Document Parsing (PyWk):  Extracts topics and concepts from uploaded PDFs, articles, and notes.
 
 ---
 
