@@ -277,7 +277,7 @@ def show_landing(authenticated=False):
                         st.rerun()
             else:
                 # Personalized welcome for authenticated users
-                st.markdown(f"<h3 style='color:#b39ddb;'>Welcome back, {st.session_state.get('username', 'Explorer')}!</h3>", unsafe_allow_html=True)
+                st.markdown(f"<h3 style='color:#b39ddb;'>Welcome back, {st.session_state.get('user_name', 'Explorer')}!</h3>", unsafe_allow_html=True)
                 col_a, col_b = st.columns([1, 1])
                 with col_a:
                     if st.button("🌳 Continue Learning", key="continue_button", use_container_width=True):

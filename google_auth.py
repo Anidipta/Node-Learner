@@ -131,9 +131,7 @@ def connect_google():
             st.session_state.authenticated = True
             st.session_state.user_id = str(user["_id"])
             st.session_state.user_name = name
-            
-            # Directly redirect to home page without showing success message or requiring button click
-            st.session_state.current_page = 'home'
+            st.session_state.current_page = 'dashboard'
             st.rerun()
         else:
             st.error("Failed to fetch user info. Please try again.")

@@ -131,14 +131,8 @@ def sidebar_nav():
     if st.session_state.authenticated or st.session_state.show_sidebar:
         with st.sidebar:
             # Logo
-            st.image("assets/images/logo.png", width=150)
-            
-            # User info if authenticated
-            if st.session_state.authenticated:
-                st.markdown(f"### Welcome, {st.session_state.get('user_name', 'Explorer')}")
-            
-            # Navigation options
-            st.markdown("---")
+            st.image("assets/images/logo.png", width=250)
+                       
             
             # Conditional navigation based on authentication
             if st.session_state.authenticated:

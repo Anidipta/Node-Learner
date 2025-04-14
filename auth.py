@@ -172,7 +172,7 @@ def verify_otp_page():
             st.session_state.authenticated = True
             st.session_state.user_id = str(user["_id"])
             st.session_state.user_name = user["name"]
-            st.session_state.current_page = 'home'
+            st.session_state.current_page = 'dashboard'
             
             st.success("Email verified successfully!")
             st.rerun()
