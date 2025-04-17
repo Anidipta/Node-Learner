@@ -113,7 +113,7 @@ def show_dashboard():
         .stTextInput input, .stNumberInput input, .stSelectbox select {
             background-color: rgba(30, 30, 40, 0.6) !important;
             color: #e1bee7 !important;
-            border: 1px solid rgba(124, 77, 255, 0.3) !important;
+            border: 2px solid rgba(124, 77, 255, 0.3) !important;
             border-radius: 8px !important;
         }
         
@@ -175,7 +175,7 @@ def show_dashboard():
     st.markdown("""
         <style>
             .stTabs [data-baseweb="tab"] {
-                font-size: 1.5rem;  /* h4-like size */
+                font-size: 2.5rem; 
                 width: 100%;
                 justify-content: center;
             }

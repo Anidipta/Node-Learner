@@ -31,43 +31,67 @@ def connect_google():
         revoke_token_endpoint=REVOKE_TOKEN_URL
     )
     
-    st.markdown("<h2 class='main-header' style='text-align: center;'>🔐 Connect with Google</h2>", unsafe_allow_html=True)
-    # Add privacy information and explanation before authentication
+    # Custom Header
     st.markdown("""
-    ### Welcome to NodeLearn's Simple Sign-In
-    
-    **Your privacy matters to us!** 
-    
-    When you connect with Google, we'll only use:
-    - ✉️ Your email address (for account identification)
-    - 👤 Your name (to personalize your experience)
-    
-    We don't access your contacts, documents, or other Google account information. Your data is stored securely and never shared with third parties.
-    
-    By continuing, you agree to NodeLearn's [Terms of Service](https://example.com/terms) and [Privacy Policy](https://example.com/privacy).
-    
-    ---
-    """)
-    
-    # Display benefits of signing in with Google
+        <style> 
+            .main-header {
+                font-size: 2.8em;
+                color: #4a4a4a;
+                font-weight: 800;
+                text-align: center;
+                margin-bottom: 0.2em;
+            }
+            .main-header:hover {
+                color: #d158e9;
+            }
+            .info-box {
+                padding: 1.2em;
+                border-radius: 10px;
+                border-left: 6px solid #d158e9;
+                margin-bottom: 1em;
+            }
+            .highlight {
+                color: #d158e9;
+                font-weight: 600;
+            }
+        </style>
+
+        <h2 class='main-header'>🔐 Connect with Google</h2>
+    """, unsafe_allow_html=True)
+
+    # Privacy and Info Section
+    st.markdown("""
+    <div class='info-box'>
+        <h4>🔒 Your Privacy Comes First</h4>
+        <p>When you connect with Google, we only access your <span class='highlight'>email address</span> and <span class='highlight'>name</span> to personalize your experience. No other information—like contacts or documents—is accessed.</p>
+        <p>Your data is stored securely and <strong>never</strong> shared with third parties.</p>
+        <p>By continuing, you agree to NodeLearn's 
+        <a href='https://example.com/terms' target='_blank'>Terms of Service</a> and 
+        <a href='https://example.com/privacy' target='_blank'>Privacy Policy</a>.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Sign In Benefits
     col1, col2 = st.columns(2)
-    
+
     with col1:
         st.markdown("""
-        #### Why Sign In With Google?
-        - 🚀 Instant access to your learning dashboard
-        - 🔒 No need to remember another password
-        - 💫 Personalized learning experience
+        ### 🌟 Why Sign In With Google?
+        - 🚀 **Instant Access** to your learning dashboard
+        - 🔐 **Password-Free** sign-in experience
+        - 💫 **Personalized Recommendations** based on your interests
+        - ⏱️ **Quick setup** — no long forms to fill
         """)
-    
+
     with col2:
         st.markdown("""
-        #### What You'll Get
-        - 📚 Access to all course materials
-        - 📊 Progress tracking across devices
-        - 🏆 Earn certificates as you learn
+        ### 🎁 What You'll Get
+        - 📚 **Full Access** to all courses and materials
+        - 📊 **Real-Time Progress Tracking** across devices
+        - 🏆 **Achievement Badges** and shareable certificates
+        - 🤝 **Priority Support** from our team
         """)
-    
+
     st.markdown("---")
     
     # Handle authorization

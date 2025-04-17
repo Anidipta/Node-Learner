@@ -2,6 +2,7 @@ streamlit
 streamlit_lottie
 streamlit-oauth
 streamlit_javascript
+streamlit_extras
 pymongo 
 plotly 
 networkx 
@@ -9,3 +10,4 @@ pyvis
 requests 
 python-dotenv
 fpdf
+pdfkit

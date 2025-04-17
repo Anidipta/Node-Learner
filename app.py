@@ -12,7 +12,7 @@ st.set_page_config(
     page_title="NodeLearn",
     page_icon="🚀",
     layout="wide",
-    initial_sidebar_state="collapsed"  # Start with sidebar collapsed
+    initial_sidebar_state="collapsed"  
 )
 
 # App state management
