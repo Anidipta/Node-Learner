@@ -193,11 +193,10 @@ def show_dashboard():
         
         # User activity summary
         col1, col2, col3 = st.columns(3)
-        
         with col1:
             st.markdown(f"""
             <div class="stat-card">
-                <div class="stat-value">{len(list(knowledge_trees))}</div>
+                <div class="stat-value">{db.get_learning_stats(st.session_state.user_id).get("total_sessions", 0)}</div>
                 <div class="stat-label">Knowledge Trees</div>
             </div>
             """, unsafe_allow_html=True)
@@ -205,7 +204,7 @@ def show_dashboard():
         with col2:
             st.markdown(f"""
             <div class="stat-card">
-                <div class="stat-value">{len(list(learning_sessions))}</div>
+                <div class="stat-value">{db.get_learning_stats(st.session_state.user_id).get("topics_explored", 0)}</div>
                 <div class="stat-label">Topics Explored</div>
             </div>
             """, unsafe_allow_html=True)
@@ -213,7 +212,7 @@ def show_dashboard():
         with col3:
             st.markdown(f"""
             <div class="stat-card">
-                <div class="stat-value">{time_spent // 60} min</div>
+                <div class="stat-value">{db.get_learning_stats(st.session_state.user_id).get("total_time", 0)/60:.2f} min </div>
                 <div class="stat-label">Learning Time</div>
             </div>
             """, unsafe_allow_html=True)

@@ -92,7 +92,7 @@ Node-Learner/
 ├── visualizer/
 │   ├── __init__.py
 │   ├── tree.py               # Tree data structure logic
-│   ├── render.py             # Pyvis/NetworkX rendering
+│   ├── render.py             # Graph MindMap rendering
 │   └── style.py              # Custom visual theming
 │
 ├── history/

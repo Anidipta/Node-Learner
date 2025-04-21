@@ -102,14 +102,135 @@ class MongoDBConnection:
             st.error(f"Error saving knowledge tree: {e}")
             return None
 
-    def get_knowledge_tree(self, tree_id):
-        """Retrieve a knowledge tree"""
+    def get_knowledge_tree(self, user_id, topic=None):
+        """
+        Retrieve knowledge trees for a user from the database.
+        
+        Parameters:
+        - user_id (str): The ID of the user whose knowledge trees to retrieve
+        - topic (str, optional): If provided, filters results to trees with this specific topic
+        
+        Returns:
+        - list: A list of knowledge tree documents, each containing topic, nodes, edges, and metadata
+        """
         try:
-            return self.knowledge_trees.find_one({"_id": ObjectId(tree_id)})
+            # Connect to knowledge_trees collection
+            collection = self.db.knowledge_trees
+            
+            # Build query - always filter by user_id
+            query = {"user_id": user_id}
+            
+            # Add topic filter if provided
+            if topic:
+                query["topic"] = topic
+                
+            # Execute query and return results as a list
+            # Sort by last_modified date to show most recent first
+            cursor = collection.find(query).sort("last_modified", -1)
+            return list(cursor)
         except Exception as e:
-            st.error(f"Error retrieving knowledge tree: {e}")
+            print(f"Error retrieving knowledge tree: {e}")
+            return []
+        
+    def get_knowledge_tree_by_id(self, tree_id):
+        """
+        Retrieve a specific knowledge tree from the database using its ID.
+        
+        Parameters:
+        - tree_id (str): The unique identifier of the knowledge tree to retrieve
+        
+        Returns:
+        - dict: The knowledge tree document or None if not found
+        """
+        try:
+            # Connect to knowledge_trees collection
+            collection = self.db.knowledge_trees
+            
+            # Convert string ID to ObjectId if necessary
+            from bson.objectid import ObjectId
+            if isinstance(tree_id, str):
+                tree_id = ObjectId(tree_id)
+                
+            # Find the document with the matching ID
+            tree_doc = collection.find_one({"_id": tree_id})
+            
+            return tree_doc
+        except Exception as e:
+            print(f"Error retrieving knowledge tree by ID: {e}")
             return None
-
+    
+    def log_learning_session(self, user_id, topic, tree_id, nodes_explored, time_spent):
+        """
+        Log a user's learning session for analytics and history tracking.
+        
+        Parameters:
+        - user_id (str): The ID of the user who explored the knowledge tree
+        - topic (str): The main topic of the knowledge tree
+        - tree_id (str): The unique identifier of the knowledge tree
+        - nodes_explored (list): List of node names that were explored during the session
+        - time_spent (int): Time spent exploring the tree in seconds
+        
+        Returns:
+        - str: ID of the logged session document or None if logging failed
+        """
+        try:
+            # Connect to learning_sessions collection
+            collection = self.db.learning_sessions
+            
+            # Create session document
+            session_doc = {
+                "user_id": user_id,
+                "topic": topic,
+                "tree_id": tree_id,
+                "nodes_explored": nodes_explored,
+                "node_count": len(nodes_explored),
+                "time_spent": time_spent,
+                "timestamp": datetime.datetime.now(),
+                "session_date": datetime.datetime.now().strftime("%Y-%m-%d")
+            }
+            
+            # Insert session document
+            result = collection.insert_one(session_doc)
+            
+            # Update user statistics
+            self._update_user_learning_stats(user_id, time_spent, len(nodes_explored))
+            
+            return str(result.inserted_id)
+        except Exception as e:
+            print(f"Error logging learning session: {e}")
+            return None
+            
+    def _update_user_learning_stats(self, user_id, time_spent, nodes_count):
+        """
+        Update user's learning statistics after a session.
+        
+        Parameters:
+        - user_id (str): The ID of the user
+        - time_spent (int): Time spent exploring in seconds
+        - nodes_count (int): Number of nodes explored in this session
+        """
+        try:
+            # Connect to users collection
+            collection = self.db.users
+            
+            # Update user document with incremented stats
+            collection.update_one(
+                {"_id": user_id},
+                {
+                    "$inc": {
+                        "total_learning_time": time_spent,
+                        "total_nodes_explored": nodes_count,
+                        "session_count": 1
+                    },
+                    "$set": {
+                        "last_active": datetime.datetime.now()
+                    }
+                },
+                upsert=False
+            )
+        except Exception as e:
+            print(f"Error updating user learning stats: {e}")
+        
     def get_graph_image(self, image_id):
         """Retrieve a graph image from GridFS"""
         try:
@@ -259,7 +380,7 @@ def get_db_connection():
 def store_session(session_data: Dict[str, Any]) -> str:
     db = get_db_connection()
     return db.save_learning_session(
-        user_id=session_data["ObjectId"],
+        user_id=session_data["_id"],
         topic=session_data["topic"],
         tree_id=session_data["tree_id"],
         time_spent=session_data["time_spent"],
