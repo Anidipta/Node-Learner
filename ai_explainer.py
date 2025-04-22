@@ -16,8 +16,8 @@ class AIExplorer:
         self.provider = provider.lower()
         
         # Set API keys from environment variables
-        self.google_api_key = os.getenv("GOOGLE_API_KEY", "")
-        self.groq_api_key = os.getenv("GROQ_API_KEY", "")
+        self.google_api_key = st.secrets["GOOGLE_API_KEY"]
+        self.groq_api_key = st.secrets["GROQ_API_KEY"]
         
         # Check if API keys are available
         if self.provider == "google" and not self.google_api_key:

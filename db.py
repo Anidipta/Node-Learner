@@ -18,8 +18,8 @@ _db_connection = None
 class MongoDBConnection:
     def __init__(self):
         """Initialize MongoDB connection using environment variables"""
-        self.mongo_uri = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
-        self.db_name = os.getenv("DB_NAME", "nodelearn")
+        self.mongo_uri = st.secrets["MONGO_URI"]
+        self.db_name = st.secrets["DB_NAME"] 
         self.client: Optional[MongoClient] = None
         self.db: Optional[Any] = None
         self.fs: Optional[GridFS] = None
