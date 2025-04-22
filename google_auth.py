@@ -2,22 +2,19 @@ import streamlit as st
 from streamlit_oauth import OAuth2Component
 import requests
 import os
-from dotenv import load_dotenv
 from db import get_db_connection
 import hashlib
 
-# Load environment variables
-load_dotenv()
 
 # Get values from environment
-AUTHORIZE_URL = os.environ.get('AUTHORIZE_URL', 'https://accounts.google.com/o/oauth2/auth')
-TOKEN_URL = os.environ.get('TOKEN_URL', 'https://oauth2.googleapis.com/token')
-REFRESH_TOKEN_URL = os.environ.get('REFRESH_TOKEN_URL', 'https://oauth2.googleapis.com/token')
-REVOKE_TOKEN_URL = os.environ.get('REVOKE_TOKEN_URL', 'https://oauth2.googleapis.com/revoke')
-CLIENT_ID = os.environ.get('CLIENT_ID')
-CLIENT_SECRET = os.environ.get('CLIENT_SECRET')
-REDIRECT_URI = os.environ.get('REDIRECT_URI')
-SCOPE = os.environ.get('SCOPE', 'https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email')
+AUTHORIZE_URL =  st.secrets['AUTHORIZE_URL']
+TOKEN_URL =  st.secrets['TOKEN_URL']
+REFRESH_TOKEN_URL =  st.secrets['REFRESH_TOKEN_URL']
+REVOKE_TOKEN_URL =  st.secrets['REVOKE_TOKEN_URL']
+CLIENT_ID =  st.secrets['CLIENT_ID']
+CLIENT_SECRET =  st.secrets['CLIENT_SECRET']
+REDIRECT_URI =  st.secrets['REDIRECT_URI']
+SCOPE =  st.secrets['SCOPE']
 
 def connect_google():
     """Handle Google OAuth authentication"""

@@ -2,11 +2,7 @@ import os
 import json
 import time
 import requests
-from dotenv import load_dotenv
 import streamlit as st
-
-# Load environment variables
-load_dotenv()
 
 class AIExplorer:
     """Interface with AI models for knowledge exploration"""

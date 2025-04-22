@@ -8,9 +8,6 @@ from email.mime.text import MIMEText
 from db import get_db_connection
 import time
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
 
 # Email configuration
 SENDER_EMAIL = st.secrets["SENDER_EMAIL"]

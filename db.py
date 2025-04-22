@@ -6,11 +6,8 @@ from pymongo import MongoClient, TEXT, DESCENDING
 from pymongo.collection import Collection
 from bson.binary import Binary
 from gridfs import GridFS
-from dotenv import load_dotenv
 import streamlit as st
 
-# Load environment variables
-load_dotenv()
 
 # MongoDB Connection Singleton
 _db_connection = None
