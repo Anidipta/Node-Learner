@@ -251,7 +251,7 @@ def login_page():
             st.session_state.authenticated = True
             st.session_state.user_id = str(user["_id"])
             st.session_state.user_name = user["name"]
-            st.session_state.current_page = 'home'
+            st.session_state.current_page = 'dashboard'
             
             # Update last login timestamp
             db.users.update_one(
