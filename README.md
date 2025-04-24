@@ -84,21 +84,11 @@ Node-Learner/
 ├── db.py                     # Database interaction logic
 ├── utils.py                  # Helper utilities (formatting, animation, export)
 │
-├── ai_explore/
-│   ├── __init__.py
-│   ├── suggest.py            # AI suggestions using GenAI or GROQ
-│   └── parser.py             # PDF/text topic extraction
+├── ai_explainer.py     # AI suggestions using GenAI or GRO
 │
-├── visualizer/
-│   ├── __init__.py
-│   ├── tree.py               # Tree data structure logic
-│   ├── render.py             # Graph MindMap rendering
-│   └── style.py              # Custom visual theming
+├── visualizer.py    # Visualize and make node
 │
-├── history/
-│   ├── __init__.py
-│   ├── tracker.py            # Tracks topic visits and durations
-│   └── search.py             # Search session history
+├── history.py  # save the history chats
 │
 ├── assets/                   # Lottie animations, logos, icons
 │   ├── mindmap_dark.json
@@ -113,9 +103,10 @@ Node-Learner/
 ## 🔧 To-Do / Roadmap
 
 - [x] Google OAuth2 Integration  
-- [x] AI Topic Exploration  
+- [x] AI Topic Exploration
+- [x]GROQ API Integration  
 - [x] Time Tracker  
-- [x] PDF Download Summary  
+- [ ] PDF Download Summary  
 - [ ] Collaborative learning (multi-user sessions)  
 - [ ] Dark/Light mode toggle  
 - [ ] Mobile optimization  
