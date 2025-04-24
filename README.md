@@ -2,140 +2,125 @@
   <img src="https://github.com/Anidipta/Node-Learner/blob/main/assets/images/logo.png" width="35%" />
 </p>
 
-**NodeLearn** is an interactive knowledge exploration platform designed to transform learning into a dynamic and visual experience. Using **AI-driven topic suggestions**, interactive trees, session tracking, and beautiful Streamlit UI, NodeLearn is your visual knowledge companion.
+# 🚀 NodeLearn
+
+> Your visual knowledge companion for interactive, AI-powered, and personalized learning.
+
+---
+
+## 📌 Problem Statement
+
+**Problem Statement 1 – Weave AI magic with Groq**
+
+---
+
+## 🎯 Objective
+
+NodeLearn transforms traditional learning into a dynamic and engaging journey by leveraging interactive knowledge trees, real-time AI assistance, and a beautiful UI. It caters to learners, educators, and knowledge explorers who benefit from visual structures, personalized tracking, and contextual AI guidance — ultimately making learning more intuitive, memorable, and fun.
+
+---
+
+## 🧠 Team & Approach
+
+### Team Name:  (Solo)
+`Anidipta Pal`
+
+### Team Members:  
+- Anidipta Pal – [GitHub](https://github.com/Anidipta) / [LinkedIn](https://linkedin.com/in/anidipta-pal) / Full Stack & AI 
+
+### Your Approach:  
+- Chose this problem to tackle the passive nature of digital learning today  
+- Focused on building a visual-first, AI-augmented learning interface  
+- Integrated GROQ API for real-time AI topic suggestions  
+- Iterated on visual components using Pyvis and NetworkX for a natural flow of concepts  
+
+---
+
+## 🛠️ Tech Stack
+
+### Core Technologies Used:
+- **Frontend:** Streamlit, HTML/CSS, Custom Streamlit Components  
+- **Backend:** Python 3.8+  
+- **Database:** MongoDB (cloud)  
+- **APIs:** GROQ API, Google Generative AI (optional), Google OAuth2  
+- **Hosting:** Streamlit Cloud   
+
+### Sponsor Technologies Used:
+- [x] **Groq:** Used for AI-powered topic suggestions  
+- [ ] **Monad:**  
+- [ ] **Fluvio:**  
+- [x] **Base:**  Integrated OnchainKit for user session tokens
+- [ ] **Screenpipe:**  
+- [ ] **Stellar:**  
 
 ---
 
 ## ✨ Key Features
 
-- 📚 Interactive Knowledge Tree:  Explore concepts in a structured, expandable tree format. Powered by **Pyvis** and **NetworkX**.
-
-- ⚙️ Real-Time AI Topic Exploration:  Integrates **Google Generative AI** or **GROQ** to provide contextual suggestions for deeper learning.
-
-- 🧠 Session History Tracking:  Keeps a log of topics you've visited and explored — accessible via a searchable archive.
-
-- ⏱️ Learning Time Tracker:  Automatically logs how long you've engaged with a topic and visualizes time spent on each section.
-
-- 📥 Downloadable Learning PDF: Generate and download a PDF summary of your session (topics explored, AI suggestions, time spent).
-
-- 🔍 Searchable Learning Archive:  Use full-text or tag-based search to instantly find past topics.
-
-- 🔐 Secure Authentication:  Custom auth plus **Google OAuth2 login** for secure, personalized access.
-
-- 🧾 Document Parsing (PyWk):  Extracts topics and concepts from uploaded PDFs, articles, and notes.
+- ✅ **📚 Interactive Knowledge Tree:** Explore and expand concepts visually using Pyvis & NetworkX  
+- ✅ **⚙️ Real-Time AI Topic Exploration:** Contextual suggestions from GROQ for deeper learning paths  
+- ✅ **🧠 Session History Tracking:** Easily revisit any previously explored topic  
+- ✅ **⏱️ Learning Time Tracker:** View time spent on each node/topic in real time  
+- ✅ **📥 PDF Summary Export:** Download a session report with all explored nodes, suggestions, and timestamps  
+- ✅ **🔍 Searchable Archive:** Full-text and tag-based archive for efficient navigation  
+- ✅ **🔐 Secure Auth:** Google OAuth2 + custom auth for user personalization  
+- ✅ **🧾 PDF Parsing (PyWk):** Upload notes or articles and extract structured topics  
 
 ---
 
-## 🧰 Tech Stack
+## 📽️ Demo & Deliverables
 
-<p align="center">
-  <table style="width:100%">
-    <tr>
-      <th>Layer</th>
-      <th>Technologies</th>
-    </tr>
-    <tr>
-      <td>Frontend/UI</td>
-      <td>Streamlit, HTML/CSS, Custom Components</td>
-    </tr>
-    <tr>
-      <td>Language</td>
-      <td>Python 3.8+</td>
-    </tr>
-    <tr>
-      <td>Visualization</td>
-      <td>Pyvis, NetworkX, Plotly</td>
-    </tr>
-    <tr>
-      <td>AI Integrations</td>
-      <td>Google GenAI, GROQ</td>
-    </tr>
-    <tr>
-      <td>Database</td>
-      <td>MongoDB (local/cloud)</td>
-    </tr>
-    <tr>
-      <td>Auth</td>
-      <td>Custom + Google OAuth2</td>
-    </tr>
-    <tr>
-      <td>PDF Parsing</td>
-      <td>PyWk</td>
-    </tr>
-    <tr>
-      <td>Deployment</td>
-      <td>Streamlit Cloud / Docker</td>
-    </tr>
-  </table>
-</p>
-
-
+- **Demo Video Link:** [Coming Soon]  
+- **Pitch Deck / PPT Link:** [Coming Soon]  
 
 ---
 
-## 🗂️ Project Structure
+## 🧪 How to Run the Project
 
+### Requirements:
+- Python 3.8+  
+- API Keys for GROQ and Google  
+- `.env` with variables:  
+  - `MONGO_URI`  
+  - `GOOGLE_API_KEY`  
+  - `GROQ_API_KEY`  
+  - `OAUTH_CLIENT_ID`  
+  - `OAUTH_CLIENT_SECRET`  
+
+### Local Setup:
 ```bash
-Node-Learner/
-│
-├── app.py                    # Main app with layout and navigation
-├── landing.py                # Hero landing screen with intro
-├── auth.py                   # Custom & Google OAuth2 authentication
-├── db.py                     # Database interaction logic
-├── utils.py                  # Helper utilities (formatting, animation, export)
-│
-├── ai_explainer.py     # AI suggestions using GenAI or GRO
-│
-├── visualizer.py    # Visualize and make node
-│
-├── history.py  # save the history chats
-│
-├── assets/                   # Lottie animations, logos, icons
-│   ├── mindmap_dark.json
-│   ├── nodelearn_logo_dark.png
-│   └── styles/
-│
-└── requirements.txt          # Python dependencies
-```
-
----
-
-## 🔧 To-Do / Roadmap
-
-- [x] Google OAuth2 Integration  
-- [x] AI Topic Exploration
-- [x]GROQ API Integration  
-- [x] Time Tracker  
-- [ ] PDF Download Summary  
-- [ ] Collaborative learning (multi-user sessions)  
-- [ ] Dark/Light mode toggle  
-- [ ] Mobile optimization  
-
----
-
-## 🚀 Getting Started
-
-1. Clone the repo:
-```bash
+# Clone the repo
 git clone https://github.com/Anidipta/nodelearn.git
 cd nodelearn
-```
 
-2. Install dependencies:
-```bash
+# Install dependencies
 pip install -r requirements.txt
-```
 
-3. Set your environment variables:
-```
-MONGO_URI=
-GOOGLE_API_KEY=
-GROQ_API_KEY=
-OAUTH_CLIENT_ID=
-OAUTH_CLIENT_SECRET=
-```
-
-4. Run the app:
-```bash
+# Run the app
 streamlit run app.py
 ```
+
+---
+
+## 🧬 Future Scope
+
+- 📈 Integrate additional AI models for adaptive learning  
+- 🛡️ Add collaborative learning sessions and chat support  
+- 🌐 Mobile-friendly responsive UI + dark/light mode toggle  
+- 📚 More file formats for document parsing (Word, Markdown)
+
+---
+
+## 📎 Resources / Credits
+
+- **GROQ API** – AI topic generation  
+- **Pyvis + NetworkX** – Knowledge tree visualization  
+- **Streamlit** – UI and app framework  
+- **MongoDB** – Persistent data storage  
+- **LottieFiles** – Animated UI assets  
+
+---
+
+## 🏁 Final Words
+
+NodeLearn was born from a love of structured, visual thinking and a desire to revolutionize the way we explore knowledge. From brainstorming to building interactive trees and AI prompts, this journey was full of learnings, iterations, and caffeine-fueled sprints. Massive shoutout to the open-source community and hackathon organizers for inspiring this build!
