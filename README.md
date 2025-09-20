@@ -10,7 +10,7 @@
 
 ## 📌 Problem Statement
 
-**Problem Statement 1 – Weave AI magic with Groq**
+**Weave AI magic with Groq**
 
 ---
 
@@ -42,16 +42,8 @@ NodeLearn transforms traditional learning into a dynamic and engaging journey by
 - **Frontend:** Streamlit, HTML/CSS, Custom Streamlit Components  
 - **Backend:** Python 3.8+  
 - **Database:** MongoDB (cloud)  
-- **APIs:** GROQ API, Google Generative AI (optional), Google OAuth2  
+- **APIs:** GROQ API, Google OAuth2  
 - **Hosting:** Streamlit Cloud   
-
-### Sponsor Technologies Used:
-- [x] **Groq:** Used for AI-powered topic suggestions  
-- [ ] **Monad:**  
-- [ ] **Fluvio:**  
-- [x] **Base:**  Integrated OnchainKit for user session tokens
-- [ ] **Screenpipe:**  
-- [ ] **Stellar:**  
 
 ---
 
@@ -65,13 +57,6 @@ NodeLearn transforms traditional learning into a dynamic and engaging journey by
 - ✅ **🔍 Searchable Archive:** Full-text and tag-based archive for efficient navigation  
 - ✅ **🔐 Secure Auth:** Google OAuth2 + custom auth for user personalization  
 - ✅ **🧾 PDF Parsing (PyWk):** Upload notes or articles and extract structured topics  
-
----
-
-## 📽️ Demo & Deliverables
-
-- **Demo Video Link:** [Coming Soon]  
-- **Pitch Deck / PPT Link:** [Coming Soon]  
 
 ---
 
